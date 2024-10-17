@@ -1,0 +1,214 @@
+---
+title: "Diet Type and Exercise Intensity for Weight Loss"
+author: "Cristel Kaye Billones"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Item no. 28
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(car)  # For Levene's test
+# Import the Excel file
+file_path <- file.choose()  # Select your file
+df <- read_csv(file_path)
+
+# Check the data structure
+head(df)
+
+# 1. Normality assumption using Shapiro-Wilk test for each group
+shapiro_test_low_carb_low <- shapiro.test(df$`Weight Loss (kg)`[df$`Diet Type` == "Low-Carb" & df$`Exercise Intensity` == "Low Intensity"])
+shapiro_test_low_carb_high <- shapiro.test(df$`Weight Loss (kg)`[df$`Diet Type` == "Low-Carb" & df$`Exercise Intensity` == "High Intensity"])
+shapiro_test_low_fat_low <- shapiro.test(df$`Weight Loss (kg)`[df$`Diet Type` == "Low-Fat" & df$`Exercise Intensity` == "Low Intensity"])
+shapiro_test_low_fat_high <- shapiro.test(df$`Weight Loss (kg)`[df$`Diet Type` == "Low-Fat" & df$`Exercise Intensity` == "High Intensity"])
+
+# Print Shapiro-Wilk test results
+cat("Shapiro-Wilk Test Results:\n")
+print(shapiro_test_low_carb_low)
+print(shapiro_test_low_carb_high)
+print(shapiro_test_low_fat_low)
+print(shapiro_test_low_fat_high)
+
+# 2. Homogeneity of variance using Levene's Test
+levene_test <- leveneTest(`Weight Loss (kg)` ~ `Diet Type` * `Exercise Intensity`, data = df)
+
+# Print Levene's Test results
+cat("\nLevene's Test for Homogeneity of Variances:\n")
+print(levene_test)
+
+# 3. Independence assumption can be visually checked by plotting residuals
+# Fit a linear model
+lm_model <- lm(`Weight Loss (kg)` ~ `Diet Type` * `Exercise Intensity`, data = df)
+
+# Plot residuals to check for independence
+par(mfrow = c(1, 2))  # Set up the plotting area
+plot(lm_model$fitted.values, lm_model$residuals, 
+     xlab = "Fitted Values", ylab = "Residuals", 
+     main = "Residuals vs Fitted Values")
+abline(h = 0, col = "red")
+
+# Normality of residuals
+qqnorm(lm_model$residuals)
+qqline(lm_model$residuals, col = "red")
+
+
+# Print Shapiro-Wilk and Levene's test results
+cat("Shapiro-Wilk Test Results:\n",
+    "Low-Carb Low Intensity: W =", shapiro_test_low_carb_low$statistic, ", p-value =", shapiro_test_low_carb_low$p.value, "\n",
+    "Low-Carb High Intensity: W =", shapiro_test_low_carb_high$statistic, ", p-value =", shapiro_test_low_carb_high$p.value, "\n",
+    "Low-Fat Low Intensity: W =", shapiro_test_low_fat_low$statistic, ", p-value =", shapiro_test_low_fat_low$p.value, "\n",
+    "Low-Fat High Intensity: W =", shapiro_test_low_fat_high$statistic, ", p-value =", shapiro_test_low_fat_high$p.value, "\n",
+    "\nLevene's Test for Homogeneity of Variances:\n",
+    "F value =", levene_test$F[1], ", p-value =", levene_test$`Pr(>F)`[1], "\n")  # Corrected access for p-value
+
+#part 2
+# Load necessary library
+library(tidyverse)
+
+# Assuming df is your data frame with the weight loss data
+# Perform the two-way ANOVA
+anova_results <- aov(`Weight Loss (kg)` ~ `Diet Type` * `Exercise Intensity`, data = df)
+
+# Display the summary of the ANOVA
+summary(anova_results)
+
+#part 3
+# Load necessary packages
+library(tidyverse)
+library(emmeans)
+
+# Post-hoc tests for Exercise Intensity
+post_hoc_exercise <- emmeans(anova_results, ~ `Exercise Intensity`)
+post_hoc_exercise_results <- summary(post_hoc_exercise)
+
+# Print detailed results
+print("Post-Hoc Test Results for Exercise Intensity:")
+print(post_hoc_exercise_results)
+
+# Pairwise comparisons
+pairwise_results_exercise <- pairs(post_hoc_exercise)  # Use pairs to get pairwise comparisons
+summary_pairwise <- summary(pairwise_results_exercise)
+
+# Print the results
+print("Pairwise Comparisons for Exercise Intensity:")
+print(summary_pairwise)
+```
+
+\newpage
+
+## Shapiro-Wilk Test Results
+
+The Shapiro-Wilk test assesses the normality of the data for each group. The following are the results for each group:
+
+**Low-Carb Low Intensity:**
+
+- W = 0.9787
+- p-value = 0.9276
+
+Interpretation: The W statistic is close to 1, and the high p-value (greater than 0.05) indicates that the distribution of weight loss in this group does not significantly deviate from normality. Therefore, we fail to reject the null hypothesis of normality.
+
+**Low-Carb High Intensity:**
+
+- W = 0.9524
+- p-value = 0.7540
+
+Interpretation: Similar to the previous group, this W statistic is also close to 1, with a high p-value suggesting that the weight loss data in this group is normally distributed. We fail to reject the null hypothesis.
+
+**Low-Fat Low Intensity:**
+
+- W = 0.9868
+- p-value = 0.9672
+
+Interpretation: The W statistic is very close to 1, and the p-value indicates no significant deviation from normality. We fail to reject the null hypothesis of normality for this group as well.
+
+**Low-Fat High Intensity:**
+
+- W = 0.9868
+- p-value = 0.9672
+
+Interpretation: This group shows the same W statistic and p-value as the Low-Fat Low Intensity group, indicating normality in the weight loss distribution.
+
+Overall, all groups pass the Shapiro-Wilk test for normality, as evidenced by their high p-values (all greater than 0.05).
+
+## Levene's Test for Homogeneity of Variances
+
+- F value = 0.1833
+- p-value = 0.9062
+
+Interpretation: Levene's test examines whether the variances across the groups are equal. The F value is low, and the p-value is much greater than 0.05. Therefore, we fail to reject the null hypothesis of homogeneity of variances. This suggests that the assumption of equal variances across the different diet and exercise intensity groups is satisfied.
+
+## ANOVA Results
+
+### Breakdown of the Output
+
+**Degrees of Freedom (Df):**
+
+- Diet Type: 1
+- Exercise Intensity: 1
+- Interaction (Diet Type * Exercise Intensity): 1
+- Residuals: 16
+
+**Sum of Squares (Sum Sq):**
+
+- Diet Type: 7.442
+- Exercise Intensity: 22.898
+- Interaction: 0.008
+- Residuals: 0.520
+
+**Mean Square (Mean Sq):**
+
+- Diet Type: `7.442 / 1 = 7.442`
+- Exercise Intensity: `22.898 / 1 = 22.898`
+- Interaction: `0.008 / 1 = 0.008`
+- Residuals: `0.520 / 16 = 0.033`
+
+**F Value:**
+
+- Diet Type: 228.985
+- Exercise Intensity: 704.554
+- Interaction: 0.246
+
+**p-value (Pr(>F)):**
+
+- Diet Type: \(p = 6.70 \times 10^{-11}\) (significant)
+- Exercise Intensity: \(p = 1.17 \times 10^{-14}\) (significant)
+- Interaction: \(p = 0.627\) (not significant)
+
+## Interpretation of Findings
+
+The F values and p-values indicate that both Diet Type and Exercise Intensity are statistically significant factors affecting weight loss (both p-values < 0.05). However, the interaction between Diet Type and Exercise Intensity is not statistically significant, as the p-value is much greater than 0.05. This suggests that the effect of Diet Type does not depend on Exercise Intensity and vice versa.
+
+## Post-Hoc Test Results for Exercise Intensity
+
+The post-hoc analysis using estimated marginal means (EMMs) shows a significant difference in weight loss between the two levels of Exercise Intensity. The results indicate:
+
+- **High Intensity**: Mean weight loss = 4.33 kg (SE = 0.057), 95% CI = [4.21, 4.45]
+- **Low Intensity**: Mean weight loss = 2.19 kg (SE = 0.057), 95% CI = [2.07, 2.31]
+
+These results show that participants in the high-intensity exercise group lost significantly more weight than those in the low-intensity group.
+
+## Pairwise Comparisons for Exercise Intensity
+
+Further pairwise comparisons confirm the post-hoc findings:
+
+- **Comparison**: High Intensity vs. Low Intensity
+- **Estimate**: Difference in weight loss = 2.14 kg
+- **Standard Error (SE)**: 0.0806
+- **Degrees of Freedom (df)**: 16
+- **t-ratio**: 26.543
+- **p-value**: <.0001 (highly significant)
+
+These results indicate strong evidence that high-intensity exercise leads to significantly greater weight loss compared to low-intensity exercise.
+
+## Conclusion
+
+The results of the ANOVA suggest that both Diet Type and Exercise Intensity have significant effects on weight loss. However, there is no significant interaction between these two factors. Post-hoc tests and pairwise comparisons further highlight the substantial impact of exercise intensity on weight loss, with higher intensity leading to greater weight reduction.
+
+
+
+
