@@ -1,0 +1,169 @@
+---
+title: "Rat Exploration Dataset"
+author: "Cristel Kaye Billones"
+output: pdf_document
+---
+
+## Item no. 14
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(broom)  # For tidy output
+
+# Import the Excel file
+file_path <- file.choose()  # Select your file
+df <- read_csv(file_path)
+
+# Check the data structure
+head(df)
+
+#I.
+# Perform one-way ANOVA
+anova_results <- aov(Time ~ Stimuli, data = df)
+
+# View the ANOVA table
+summary(anova_results)
+
+# Shapiro-Wilk test
+shapiro_test <- shapiro.test(df$Time)
+print(shapiro_test)
+
+library(car)  
+
+# Levene's test
+levene_test <- leveneTest(Time ~ Stimuli, data = df)
+print(levene_test)
+
+# Post-hoc test if ANOVA is significant
+post_hoc <- TukeyHSD(anova_results)
+print(post_hoc)
+
+# Boxplot of Time by Stimuli
+ggplot(df, aes(x = Stimuli, y = Time)) +
+  geom_boxplot() +
+  labs(title = "Time Spent Exploring by Treatment Condition", 
+       x = "Treatment Condition", 
+       y = "Time (seconds)") +
+  theme_minimal()
+
+# Print summarized results
+cat("Summary of Results:\n")
+cat("\nOne-Way ANOVA:\n")
+anova_summary <- summary(anova_results)
+print(anova_summary)
+
+cat("\nShapiro-Wilk Test:\n")
+cat(sprintf("Statistic = %.4f, p-value = %.4f\n", shapiro_test$statistic, shapiro_test$p.value))
+
+cat("\nLevene's Test for Homogeneity of Variance:\n")
+cat(sprintf("Statistic = %.4f, p-value = %.4f\n", levene_test$statistic, levene_test$p.value))
+
+cat("\nPost-Hoc Test (Tukey's HSD):\n")
+print(post_hoc)
+
+#2
+# Shapiro-Wilk test for normality for each group
+shapiro_test_shape <- shapiro.test(df$Time[df$Stimuli == "Shape"])
+shapiro_test_pattern <- shapiro.test(df$Time[df$Stimuli == "Pattern"])
+shapiro_test_picture <- shapiro.test(df$Time[df$Stimuli == "Picture"])
+
+# Print Shapiro-Wilk test results
+cat("Shapiro-Wilk Test Results:\n")
+print(shapiro_test_shape)
+print(shapiro_test_pattern)
+print(shapiro_test_picture)
+
+# Levene's test for homogeneity of variances
+levene_test <- leveneTest(Time ~ Stimuli, data = df)
+cat("\nLevene's Test for Homogeneity of Variances:\n")
+print(levene_test)
+```
+
+
+
+\newpage
+
+### 1. Interpretation of the Results
+
+**Overall Structure:**
+
+The output shows the differences between the mean exploration times for each pair of treatment conditions, along with the lower and upper bounds of the confidence interval for the mean difference and the adjusted p-values.
+
+
+\vspace{5mm}
+### Mean Differences:
+**Picture vs. Pattern:**
+
+- Difference: 1.066667 seconds
+- Confidence Interval: (0.4668045, 1.666529)
+- Adjusted p-value: 0.0003414
+- Interpretation: The rats spent significantly more time exploring the chamber when shown pictures compared to patterns. The difference of about 1.07 seconds is statistically significant (p < 0.001).
+
+
+**Shape vs. Pattern:**
+
+- Difference: -1.637500 seconds
+- Confidence Interval: (-2.2373622, -1.037638)
+- Adjusted p-value: 0.0000004
+- Interpretation: The rats spent significantly less time exploring the chamber when shown shapes compared to patterns. The difference of about 1.64 seconds is statistically significant (p < 0.001).
+
+
+**Shape vs. Picture:**
+
+- Difference: -2.704167 seconds
+- Confidence Interval: (-3.3040289, -2.104304)
+- Adjusted p-value: 0.0000000
+- Interpretation: The rats spent significantly less time exploring the chamber when shown shapes compared to pictures. The difference of about 2.70 seconds is statistically significant (p < 0.001).
+
+\vspace{5mm}
+### Summary of Findings:
+
+**The analysis indicates that:**
+
+Pictures significantly increased exploration time compared to both Patterns and Shapes.
+Shapes resulted in significantly less exploration time compared to both Patterns and Pictures.
+Patterns led to an intermediate level of exploration time, significantly different from both other conditions.
+
+**Conclusion:**
+
+Overall, the results suggest that the type of visual stimuli significantly affects the exploration behavior of the rats, with pictures promoting more exploration compared to shapes and patterns. The Tukey's HSD test confirms these differences with statistically significant p-values for all pairwise comparisons.
+
+### 2. Shapiro-Wilk Test Results:
+
+**Shape Group:**
+
+W = 0.94374, p-value = 0.548
+**Interpretation:** The p-value is greater than 0.05, which indicates that we fail to reject the null hypothesis. This suggests that the data for the "Shape" group is normally distributed.
+
+**Pattern Group:**
+
+W = 0.95005, p-value = 0.6377
+Interpretation: Again, the p-value is greater than 0.05. Thus, we fail to reject the null hypothesis, indicating that the data for the "Pattern" group is also normally distributed.
+
+**Picture Group:**
+
+W = 0.91516, p-value = 0.2483
+Interpretation: The p-value here is also greater than 0.05, meaning we fail to reject the null hypothesis. This indicates that the data for the "Picture" group is normally distributed as well.
+Overall Conclusion for Normality Tests:
+All three treatment groups (Shape, Pattern, and Picture) show normal distribution of the time spent exploring, as indicated by the p-values from the Shapiro-Wilk tests. This suggests that the assumption of normality is satisfied for the one-way ANOVA.
+
+\vspace{5mm}
+\vspace{5mm}
+### Levene's Test for Homogeneity of Variances:
+\vspace{5mm}
+**Levene's Test Output:**
+
+Df: 2 (degrees of freedom for the groups)
+F value = 0.4313
+p-value = 0.6533
+Interpretation: The p-value of 0.6533 is much greater than 0.05. This indicates that we fail to reject the null hypothesis of equal variances. Therefore, we can conclude that the variances among the three groups (Shape, Pattern, and Picture) are homogenous, meaning they are approximately equal.
+
+**Overall Conclusion for Variance Homogeneity:**
+
+The assumption of homogeneity of variances is satisfied, which is necessary for conducting a one-way ANOVA.
+
+### Summary:
+All groups meet the assumption of normality.
+The variances across the groups are equal.
+Therefore, the assumptions for performing a one-way ANOVA are met, and you can confidently proceed with the ANOVA analysis to compare the time spent exploring the chamber among the three treatment conditions.
+

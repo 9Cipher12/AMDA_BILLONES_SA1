@@ -1,0 +1,341 @@
+---
+title: "Server Chuchu not sure"
+author: "Cristel Kaye Billones"
+output: pdf_document
+---
+
+## Item no. 30
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(car)  # For Levene's test
+# Import the Excel file
+file_path <- file.choose()  # Select your file
+df <- read_csv(file_path)
+
+# Check the data structure
+head(df)
+
+#Data cleaning
+# Step 1: Clean column names (remove spaces and special characters)
+df <- df %>%
+  rename(Server = `Server`,
+         Server_Type = `Server Type`,
+         Security_Protocol = `Security Protocol`,
+         Time = `Time`,
+         Response_Time = `Response Time`)
+
+# Step 2: Check for missing data
+missing_data_summary <- df %>%
+  summarise(across(everything(), ~sum(is.na(.))))
+print(missing_data_summary)
+
+# Step 3: Ensure consistent formatting for categorical variables
+df <- df %>%
+  mutate(Server_Type = factor(Server_Type),
+         Security_Protocol = factor(Security_Protocol),
+         Time = factor(Time))
+
+# Step 4: Check the cleaned data structure
+glimpse(df)
+
+# Step 5: Optional - drop rows with missing data
+df_cleaned <- df %>%
+  drop_na()
+
+# View the cleaned dataset
+head(df_cleaned)
+
+#1. Check assumptions
+# Load necessary libraries
+library(tidyverse)
+library(car)  # For Levene's test
+library(ggplot2)
+
+# 1. Check Normality for each group
+df_cleaned %>%
+  ggplot(aes(sample = Response_Time)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_grid(Server_Type ~ Security_Protocol) +
+  labs(title = "Q-Q Plot for Response Time by Server Type and Security Protocol")
+
+# Shapiro-Wilk test for normality
+normality_results <- df_cleaned %>%
+  group_by(Server_Type, Security_Protocol) %>%
+  summarise(shapiro_p = shapiro.test(Response_Time)$p.value)
+
+print("Shapiro-Wilk Test Results for Normality:")
+print(normality_results)
+
+# 2. Check Homogeneity of Variance using Levene's Test
+levene_test <- leveneTest(Response_Time ~ Server_Type * Security_Protocol, data = df_cleaned)
+print("Levene's Test for Homogeneity of Variance:")
+print(levene_test)
+
+# 3. Check for Independence (No Duplicates)
+independence_check <- if(length(unique(df_cleaned$Server)) == nrow(df_cleaned)){
+  "Independence assumption met: All servers are independent."
+} else {
+  "Independence assumption violated: Duplicates found."
+}
+print(independence_check)
+
+
+#Since there was a violation
+# Load necessary libraries
+library(tidyverse)
+library(afex)  # For Repeated-Measures ANOVA with corrections
+library(car)   # For Levene's Test
+
+# Step 1: Clean and Prepare Data (If not already done)
+colnames(df_cleaned)
+df_cleaned <- df %>%
+  rename(Server = `Server`,
+         Server_Type = `Server_Type`,
+         Security_Protocol = `Security_Protocol`,
+         Time = `Time`,
+         Response_Time = `Response_Time`) %>%
+  mutate(Server_Type = factor(Server_Type),
+         Security_Protocol = factor(Security_Protocol),
+         Time = factor(Time)) %>%
+  drop_na()
+
+# Step 2: Check Assumptions
+
+# 1. Shapiro-Wilk Test for Normality (Already performed)
+print("Shapiro-Wilk Test Results for Normality:")
+print(normality_results)
+
+# 2. Levene's Test for Homogeneity of Variance (Already performed)
+levene_test <- leveneTest(Response_Time ~ Server_Type * Security_Protocol, data = df_cleaned)
+print("Levene's Test for Homogeneity of Variance:")
+print(levene_test)
+
+# 3. Check for Independence (No Duplicates)
+independence_check <- if(length(unique(df_cleaned$Server)) == nrow(df_cleaned)){
+  "Independence assumption met: All servers are independent."
+} else {
+  "Independence assumption violated: Duplicates found."
+}
+print(independence_check)
+
+# Step 3: Perform Repeated-Measures ANOVA
+# Since independence is violated and sphericity may be an issue, we will use Greenhouse-Geisser correction
+anova_model <- aov_car(Response_Time ~ Server_Type * Security_Protocol + Error(Server/Time),
+                       data = df_cleaned, factorize = TRUE)
+
+# Step 4: Display the ANOVA Results with Greenhouse-Geisser Correction
+anova_results <- summary(anova_model, correction = "GG")
+
+# Print the results
+print("Repeated-Measures ANOVA with Greenhouse-Geisser Correction:")
+print(anova_results)
+
+
+#Perform the anova
+
+# Load necessary libraries
+library(tidyverse)
+library(afex)  # For ANOVA
+library(car)   # For Levene's Test
+library(emmeans) # For post-hoc analysis if needed
+
+
+# Perform the Three-Way Repeated-Measures ANOVA
+anova_model <- aov_car(Response_Time ~ Server_Type * Security_Protocol + Error(Server/Time),
+                       data = df_cleaned, factorize = TRUE)
+
+# Display the ANOVA results with Greenhouse-Geisser Correction (to handle sphericity issues)
+anova_results <- summary(anova_model, correction = "GG")
+
+# Print the results
+print("Three-Way ANOVA with Greenhouse-Geisser Correction:")
+print(anova_results)
+
+# Post-hoc analysis if needed
+emmeans_model <- emmeans(anova_model, pairwise ~ Server_Type * Security_Protocol * Time, adjust = "bonferroni")
+print("Post-hoc analysis results:")
+print(emmeans_model)
+
+#SUmmary
+
+# 1. Shapiro-Wilk Test for Normality (Already performed)
+print("Shapiro-Wilk Test Results for Normality:")
+print(normality_results)
+
+# 2. Levene's Test for Homogeneity of Variance (Already performed)
+levene_test <- leveneTest(Response_Time ~ Server_Type * Security_Protocol, data = df_cleaned)
+print("Levene's Test for Homogeneity of Variance:")
+print(levene_test)
+
+# 3. Check for Independence (No Duplicates)
+independence_check <- if(length(unique(df_cleaned$Server)) == nrow(df_cleaned)){
+  "Independence assumption met: All servers are independent."
+} else {
+  "Independence assumption violated: Duplicates found."
+}
+print(independence_check)
+
+print("Repeated-Measures ANOVA with Greenhouse-Geisser Correction:")
+print(anova_results)
+
+print("Three-Way ANOVA with Greenhouse-Geisser Correction:")
+print(anova_results)
+
+print("Post-hoc analysis results:")
+print(emmeans_model)
+
+
+#3
+# Load necessary libraries
+library(tidyverse)
+library(lme4)
+
+library(broom.mixed)
+
+# Fit a linear model with interaction terms"
+colnames(df_cleaned)
+model <- lm(Response_Time ~ `Server_Type` * `Security_Protocol` * Time, data = df_cleaned)
+
+# Display the summary of the model
+summary(model)
+
+# Check for interaction effects
+interaction_results <- anova(model)
+print(interaction_results)
+
+# Plot interaction effects if necessary
+# Plot interaction effects if necessary
+interaction_plot <- df_cleaned %>%
+  group_by(Server_Type, Security_Protocol, Time) %>%
+  summarise(avg_response = mean(Response_Time)) %>%
+  ggplot(aes(x = Time, y = avg_response, color = Server_Type, shape = Security_Protocol)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "Interaction Plot of Server Type and Security Protocol over Time",
+       x = "Time",
+       y = "Average Response Time") +
+  theme_minimal()
+
+print(interaction_plot)
+
+#4. post ad hoc
+# Load necessary packages
+library(tidyverse)  # For data manipulation
+library(emmeans)    # For post-hoc tests
+
+# Fit the linear model with interaction effects
+model <- lm(Response_Time ~ Server_Type * Security_Protocol * Time, data = df_cleaned)
+
+# Display summary of the model
+summary(model)
+
+# Conduct ANOVA to analyze the interaction effects
+interaction_results <- anova(model)
+print(interaction_results)
+
+# Estimate marginal means for the interaction of Server_Type and Security_Protocol
+emm <- emmeans(model, ~ Server_Type * Security_Protocol)
+
+# Perform pairwise comparisons for the interaction
+pairwise_results <- pairs(emm)
+
+# Display pairwise comparison results
+print(pairwise_results)
+
+# Optional: Plot the results for better visualization
+plot(emm)
+
+# Estimate marginal means for the interaction of Server_Type and Time
+emm_time <- emmeans(model, ~ Server_Type * Time)
+
+# Perform pairwise comparisons for the interaction
+pairwise_time_results <- pairs(emm_time)
+
+# Display pairwise comparison results for Time interactions
+print(pairwise_time_results)
+
+# Optional: Plot the results for better visualization of Time interactions
+plot(emm_time)
+
+
+```
+
+
+# Assumption Checks
+
+## Normality Assumption
+
+The normality assumption, as assessed by the Shapiro-Wilk test, is violated across all groups (p-values < 0.05), indicating that the response times are not normally distributed within the **Server_Type** and **Security_Protocol** groups.
+
+## Homogeneity of Variance
+
+Levene's test for homogeneity of variance shows a significant result (p < 0.001), indicating that the variances across groups are not equal.
+
+## Independence Assumption
+
+The independence assumption is violated, as duplicates were found in the dataset. 
+
+Given these violations, we perform the appropriate corrections, such as the Greenhouse-Geisser correction for violations of sphericity.
+
+# Repeated-Measures ANOVA
+
+With the Greenhouse-Geisser correction, the repeated-measures ANOVA shows:
+
+- **Server_Type** has a significant effect on response times, with notable differences between Windows and Linux servers.
+- **Time** is also a significant factor, suggesting that response times vary across different time points.
+- There is a significant interaction between **Server_Type** and **Security_Protocol**, as well as between **Server_Type** and **Time**.
+
+The Greenhouse-Geisser correction, applied due to sphericity violations, confirms the significance of the observed effects, making the analysis robust.
+
+# Three-Way ANOVA Results
+
+## Main Effects
+
+- **Server Type**: Significant effect on response time (F(1, 16) = 59.32, p < 0.001). Windows and Linux servers display different response times.
+- **Time**: Significant effect (F(2, 32) = 18.52, p < 0.001), indicating that response times change across the three time points (Baseline, 1 Month, 2 Months).
+
+## Interaction Effects
+
+- **Server Type** × **Security Protocol**: Significant interaction (F(1, 16) = 5.72, p = 0.029). The effect of server type varies with the security protocol used.
+- **Server Type** × **Time**: Significant interaction (F(2, 32) = 34.30, p < 0.001). The response time evolution over time differs based on the server type.
+- **Security Protocol** × **Time**: Significant interaction (F(2, 32) = 3.91, p = 0.031), showing that response times change differently over time based on the security protocol used.
+
+Post-hoc analyses reveal that Linux servers using SSL have significantly different response times compared to Windows servers using TLS after one month.
+
+# Regression Analysis of Main and Interaction Effects
+
+## Main Effects
+
+- **Server Type**: Significant (p < 2.2e-16). Windows servers tend to have a higher average response time by about 16.51 units compared to Linux servers.
+- **Security Protocol**: Significant (p < 2.2e-16). TLS decreases response time by about 5.92 units compared to HTTP.
+- **Time**: 
+  - **2 Months**: Response times increase by 2.90 units (p = 0.0407).
+  - **Baseline**: Response times decrease by 10.80 units (p < 2e-16).
+
+## Interaction Effects
+
+- **Server Type** × **Security Protocol**: Significant (p < 2.2e-16). The combination of Windows servers and TLS leads to a significant increase in response time by 20.28 units.
+- **Server Type** × **Time**: Significant (p < 2.2e-16). Response time differences between Windows servers across time points are not significant (p = 0.9959).
+- **Security Protocol** × **Time**: Significant (p = 2.300e-05). The effect of security protocol on response time changes across time periods.
+
+## Three-Way Interaction
+
+- **Server Type** × **Security Protocol** × **Time**: Significant (p = 5.021e-05). Server type affects response times differently depending on both the security protocol and time.
+
+# Post-Hoc Tests
+
+## Pairwise Comparisons for Server_Type × Security_Protocol
+
+All pairwise contrasts between combinations of **Server_Type** and **Security_Protocol** are statistically significant (p-values < 0.0001), showing substantial differences in response times for these combinations, especially between Linux and Windows server configurations.
+
+## Pairwise Comparisons for Server_Type × Time
+
+Significant differences were found among time points, showing changes in response times depending on server type over time. For example:
+
+- **Linux 1 Month vs. Windows 1 Month**: Estimate = -26.646 (p < 0.0001), indicating significantly better performance for Linux servers after one month.
+
+# Conclusion
+
+There are significant main effects and interactions between **Server Type**, **Security Protocol**, and **Time**. Windows servers generally have longer response times, with the impact of security protocols and time points varying depending on the server type. Linux servers show better performance over time, particularly when using SSL compared to Windows servers with TLS.
